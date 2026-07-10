@@ -91,17 +91,35 @@ def leftUnit[N]: LeftUnit[N] =
 type RightUnit[N] = N + Zero.type =:= N
 def rightUnit[N](using natCase: NatCase[N]): RightUnit[N] =
   natCase match
+    /**
+      * If N =:= Zero
+      *
+      *     N + Zero
+      * =:= Zero + Zero (because N =:= Zero)
+      * =:= Zero        (by _+_ definition)
+      * =:= N           (because N =:= Zero)
+      */
     case NatCase.ZeroCase(eq) =>
-      val h1 = eq.liftCo[[X] =>> Add[X, Zero.type]]
-      val h2 = h1.andThen(eq.flip)
-      h2
+      val h1 = eq.liftCo[[X] =>> X + Zero.type] // N + Zero =:= Zero
+      val h2 = eq.flip                          // Zero =:= N
+      h1.andThen(h2)
 
+    /**
+      * If N =:= Suc[n]:
+      *
+      * Inductive Hypothesis: n + Zero = n
+      *
+      *     N + Zero
+      * =:= Suc[n] + Zero (because N =:= Suc[n])
+      * =:= Suc[n + Zero] (by _+_ definition)
+      * =:= Suc[n]        (by Inductive Hypothesis)
+      * =:= N             (because N =:= Zero)
+      */
     case sucCase: NatCase.SucCase[N, n] =>
-      val ih = rightUnit[n](using sucCase.prev)
-      val h1 = sucCase.eq.liftCo[[X] =>> Add[X, Zero.type]]
-      val h2 = h1.andThen(ih.liftCo[Suc])
-      val h3 = h2.andThen(sucCase.eq.flip)
-      h3
+      val h1 = sucCase.eq.liftCo[[X] =>> X + Zero.type] // N + Zero =:= Suc[n + Zero]
+      val ih = rightUnit[n](using sucCase.prev)         // n + Zero =:= n
+      val h2 = sucCase.eq.flip                          // Suc[n] =:= n
+      h1.andThen(ih.liftCo[Suc]).andThen(h2)
 
 type LeftSuc[M, N] = Suc[M] + N =:= Suc[M + N]
 def leftSuc[M, N]: LeftSuc[M, N] =
