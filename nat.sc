@@ -1,3 +1,5 @@
+//> using scala 3.8.3
+
 import scala.compiletime.erasedValue
 import scala.compiletime.summonInline
 
